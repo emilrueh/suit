@@ -47,7 +47,12 @@ return function(core, normal, ...)
 
 	core:registerDraw(opt.draw or function(image, x, y, r, g, b, a)
 		love.graphics.setColor(r, g, b, a)
-		love.graphics.draw(image, x, y, 0, 1, 1, image:getWidth() / 2, image:getHeight() / 2) -- Set origin to center
+
+		-- Snap position to integer coordinates to prevent subpixel blur
+		local ix, iy = math.floor(x + 0.5), math.floor(y + 0.5)
+		local iw, ih = math.floor(image:getWidth() / 2), math.floor(image:getHeight() / 2)
+
+		love.graphics.draw(image, x, y, 0, 1, 1, iw, ih)
 	end, image, x, y, love.graphics.getColor())
 
 	return {
