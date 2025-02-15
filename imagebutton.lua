@@ -52,7 +52,7 @@ return function(core, normal, ...)
 		local ix, iy = math.floor(x + 0.5), math.floor(y + 0.5)
 		local iw, ih = math.floor(image:getWidth() / 2), math.floor(image:getHeight() / 2)
 
-		love.graphics.draw(image, x, y, 0, 1, 1, iw, ih)
+		love.graphics.draw(image, ix, iy, 0, 1, 1, iw, ih)
 	end, image, x, y, love.graphics.getColor())
 
 	return {
