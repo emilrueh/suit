@@ -1,13 +1,13 @@
 -- This file is part of SUIT, copyright (c) 2016 Matthias Richter
 
-local BASE = (...):match('(.-)[^%.]+$')
+local BASE = (...):match("(.-)[^%.]+$")
 
 local function isType(val, typ)
 	return type(val) == "userdata" and val.typeOf and val:typeOf(typ)
 end
 
 return function(core, normal, ...)
-	local opt, x,y = core.getOptionsAndSize(...)
+	local opt, x, y = core.getOptionsAndSize(...)
 	opt.normal = normal or opt.normal or opt[1]
 	opt.hovered = opt.hovered or opt[2] or opt.normal
 	opt.active = opt.active or opt[3] or opt.hovered
@@ -15,18 +15,22 @@ return function(core, normal, ...)
 
 	local image = assert(opt.normal, "No image for state `normal'")
 
-	core:registerMouseHit(opt.id, x, y, function(u,v)
-		-- mouse in image?
-		u, v = math.floor(u+.5), math.floor(v+.5)
-		if u < 0 or u >= image:getWidth() or v < 0 or v >= image:getHeight() then
+	core:registerMouseHit(opt.id, x, y, function(u, v)
+		-- Adjust mouse coordinates to account for center origin
+		local w, h = image:getWidth(), image:getHeight()
+		u = u + w / 2 -- Shift origin from center to top-left
+		v = v + h / 2
+
+		u, v = math.floor(u + 0.5), math.floor(v + 0.5)
+		if u < 0 or u >= w or v < 0 or v >= h then
 			return false
 		end
 
 		if opt.mask then
-			-- alpha test
-			assert(isType(opt.mask, "ImageData"), "Option `mask` is not a love.image.ImageData")
-			assert(u < mask:getWidth() and v < mask:getHeight(), "Mask may not be smaller than image.")
-			local _,_,_,a = mask:getPixel(u,v)
+			-- Use adjusted u/v for mask check
+			assert(isType(opt.mask, "ImageData"), "Mask must be ImageData")
+			assert(u < opt.mask:getWidth() and v < opt.mask:getHeight(), "Mask too small")
+			local _, _, _, a = opt.mask:getPixel(u, v)
 			return a > 0
 		end
 
@@ -41,16 +45,16 @@ return function(core, normal, ...)
 
 	assert(isType(image, "Image"), "state image is not a love.graphics.image")
 
-	core:registerDraw(opt.draw or function(image,x,y, r,g,b,a)
-		love.graphics.setColor(r,g,b,a)
-		love.graphics.draw(image,x,y)
-	end, image, x,y, love.graphics.getColor())
+	core:registerDraw(opt.draw or function(image, x, y, r, g, b, a)
+		love.graphics.setColor(r, g, b, a)
+		love.graphics.draw(image, x, y, 0, 1, 1, image:getWidth() / 2, image:getHeight() / 2) -- Set origin to center
+	end, image, x, y, love.graphics.getColor())
 
 	return {
 		id = opt.id,
 		hit = core:mouseReleasedOn(opt.id),
 		hovered = core:isHovered(opt.id),
 		entered = core:isHovered(opt.id) and not core:wasHovered(opt.id),
-		left = not core:isHovered(opt.id) and core:wasHovered(opt.id)
+		left = not core:isHovered(opt.id) and core:wasHovered(opt.id),
 	}
 end
